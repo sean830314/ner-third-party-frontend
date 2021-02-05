@@ -8,7 +8,7 @@
 
 <style>
 .el-header {
-  background-color: #B3C0D1;
+  background-color: #b3c0d1;
   color: #333;
   line-height: 60px;
 }
