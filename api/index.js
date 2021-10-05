@@ -7,18 +7,18 @@ app.use(bodyParser.json())
 app.post('/', async function (req, res) {
   const payload = req.body
   var result = {};
-  result.tableData = [];
+  result.ner = {};
+  result.ner.tableColConfigs = []; 
+  result.ner.tableData = [];
   try {
     console.log("Received:")
-    console.log(payload["model"])
-    console.log(payload["paragraph"])
     const formData = new FormData()
-    formData.append('type', payload["model"]);
+    formData.append('type', payload["model_type"]);
     formData.append('paragraph', payload["paragraph"]);
     console.log(formData)
     const response = await axios({
       method: 'post',
-      url: 'http://10.0.4.58:3001/api/v1/predict/model_predict',
+      url: 'http://127.0.0.1:3001/api/v1/predict/model_predict',
       data: formData,
       headers: {
         'Content-Type': `multipart/form-data; boundary=${formData._boundary}`,
@@ -27,13 +27,36 @@ app.post('/', async function (req, res) {
     if (response.status == 200) {
       console.log("call ner api success")
       console.log(response.data)
-      response.data.ner.forEach(function (t, i) {
-        console.log('item%s is %s', i, t);
-        result.tableData.push(t)
+      const tableCols = new Array()
+      response.data.ner.forEach(function (item, index) {
+        for (let i = 0; i < item["entities"].length; i++) {
+          item["entities"][i]["model"] = item["model"]
+          // combine text instances of the same entity into an array
+          var text = ""
+          for (let j = 0; j < item["entities"][i]["values"].length; j++) {
+            if (j == item["entities"][i]["values"].length-1) {
+              text += "\"" + item["entities"][i]["values"][j] + "\""
+            }else{
+              text += "\"" + item["entities"][i]["values"][j] + "\", "
+            }
+          }
+          item["entities"][i]["values"] = "["+text+"]"
+          // build column data
+          result.ner.tableData.push(item["entities"][i])
+        }
       })
+      // build column metadata
+      tableCols.push("model")
+      tableCols.push("type")
+      tableCols.push("values")
+      tableCols.forEach(function(key){
+        result.ner.tableColConfigs.push({ prop: key, label: key[0].toUpperCase() + key.slice(1) })
+      });
+      console.log("11111")
+      console.log(result)
     }
     else {
-      console.log("call ner api faild")
+      console.log("call ner api faild, status code not 200")
     }
     res.json(result)
   } catch (e) {
