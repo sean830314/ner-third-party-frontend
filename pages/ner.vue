@@ -10,8 +10,8 @@
         <el-form-item label="paragraph" prop="paragraph">
           <el-input type="textarea" v-model="ruleForm.paragraph"></el-input>
         </el-form-item>
-        <el-form-item label="model type" prop="model">
-          <el-radio-group v-model="ruleForm.model">
+        <el-form-item label="model type" prop="model_type">
+          <el-radio-group v-model="ruleForm.model_type">
             <el-radio label="Azure"></el-radio>
             <el-radio label="NLTK"></el-radio>
             <el-radio label="Spacy"></el-radio>
@@ -20,59 +20,17 @@
           </el-radio-group>
         </el-form-item>
         <el-form-item>
-          <el-button type="primary" @click="submitForm('ruleForm')"
+          <el-button type="primary" :loading="false" @click="submitForm('ruleForm')"
             >Recognize</el-button
           >
-          <el-button @click="resetForm('ruleForm')">Reset</el-button>
+          <el-button type="danger" @click="resetForm('ruleForm')">Reset</el-button>
         </el-form-item>
       </el-form>
       <el-card>
         <el-tabs type="border-card">
           <el-tab-pane label="Result" name="Result">
-            <el-table :data="tableData" stripe style="width: 100%">
-              <el-table-column prop="model" label="model" width="180">
-              </el-table-column>
-              <el-table-column label="Organization" width="700">
-                <div
-                  v-if="scope.row.organization.length > 0"
-                  slot-scope="scope"
-                >
-                  <div
-                    v-for="(organization, index) in scope.row.organization"
-                    :key="`${scope.row.organization}-example-${index}`"
-                  >
-                    <span
-                      style="margin-right: 18px; color: red; font-size: 18px"
-                      >{{ index + 1 }}. {{ organization }}</span
-                    >
-                  </div>
-                </div>
-              </el-table-column>
-              <el-table-column label="Address" width="700">
-                <div v-if="scope.row.address.length > 0" slot-scope="scope">
-                  <div
-                    v-for="(address, index) in scope.row.address"
-                    :key="`${scope.row.address}-example-${index}`"
-                  >
-                    <span
-                      style="margin-right: 18px; color: red; font-size: 18px"
-                      >{{ index + 1 }}. {{ address }}</span
-                    >
-                  </div>
-                </div>
-              </el-table-column>
-              <el-table-column label="Date" width="180">
-                <div v-if="scope.row.date.length > 0" slot-scope="scope">
-                  <div
-                    v-for="(date, index) in scope.row.date"
-                    :key="`${scope.row.date}-example-${index}`"
-                  >
-                    <span
-                      style="margin-right: 18px; color: red; font-size: 18px"
-                      >{{ index + 1 }}. {{ date }}</span
-                    >
-                  </div>
-                </div>
+            <el-table :data="ner.tableData" stripe style="width: 100%">
+              <el-table-column v-for="{ prop, label } in ner.tableColConfigs" :key="prop" :prop="prop" :label="label">
               </el-table-column>
             </el-table>
           </el-tab-pane>
@@ -90,7 +48,7 @@ export default {
     return {
       ruleForm: {
         paragraph: "",
-        model: "",
+        model_type: "",
       },
       rules: {
         paragraph: [
@@ -108,59 +66,63 @@ export default {
           },
         ],
       },
-      tableData: [],
+      ner: {
+      },
     };
   },
   methods: {
-    renderResult(tableData) {
-      console.log("ininder");
-      console.log(tableData);
-      this.$data.tableData = tableData;
+    renderResult(ner) {
+      this.$data.ner = ner;
     },
     submitForm(formName) {
+      const loadingObj=this.$loading({
+        lock:true,
+        text:"Submit...",
+        spinner:"el-icon-loading",
+        background:"rgba(0,0,0,0.5)",
+        target:document.querySelector(".submit-test-dialog")
+      })
       var responseData;
       this.$refs[formName].validate((valid) => {
         if (valid) {
-          alert(this.$data.ruleForm.paragraph);
-          alert(this.$data.ruleForm.model);
           try {
             var responseData = [];
             const formData = {
-              model: this.$data.ruleForm.model,
+              model_type: this.$data.ruleForm.model_type,
               paragraph: this.$data.ruleForm.paragraph,
             };
             axios
               .post("/api", formData)
               .then((response) => {
-                console.log(response.data.tableData);
                 console.log(response.status);
                 console.log(response.statusText);
                 console.log(response.headers);
                 console.log(response.config);
-                alert("success");
-                this.renderResult(response.data.tableData);
+                this.renderResult(response.data.ner);
+                loadingObj.close();
               })
               .catch(function (error) {
-                alert("error");
                 alert(error);
               });
-            console.log(this.$data.tableData);
+            console.log(this.$data.ner);
           } catch (e) {
             alert(e);
             this.$message({
               message: `Something went wrong. ${JSON.stringify(e)}`,
               type: "error",
             });
+            loadingObj.close();
           }
         } else {
           console.log("error submit!!");
+          loadingObj.close();
           return false;
         }
-        alert("submit!");
       });
     },
     resetForm(formName) {
       this.$refs[formName].resetFields();
+      this.$data.ner={};
     },
   },
 };

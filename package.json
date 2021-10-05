@@ -9,10 +9,11 @@
     "generate": "nuxt generate"
   },
   "dependencies": {
-    "axios": "^0.21.1",
+    "axios": "^0.21.4",
     "core-js": "^3.8.3",
     "element-ui": "^2.15.0",
     "express": "^4.17.1",
+    "form-data": "^4.0.0",
     "nuxt": "^2.14.12"
   },
   "devDependencies": {}
