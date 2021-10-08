@@ -4,7 +4,7 @@ var FormData = require('form-data');
 const express = require('express')
 const app = express()
 app.use(bodyParser.json())
-app.post('/', async function (req, res) {
+app.post('/recognize', async function (req, res) {
   const payload = req.body
   var result = {};
   result.ner = {};
@@ -18,7 +18,7 @@ app.post('/', async function (req, res) {
     console.log(formData)
     const response = await axios({
       method: 'post',
-      url: 'http://127.0.0.1:3001/api/v1/predict/model_predict',
+      url: 'http://127.0.0.1:3001/api/v1/ner/paragraph/recognize',
       data: formData,
       headers: {
         'Content-Type': `multipart/form-data; boundary=${formData._boundary}`,
@@ -57,6 +57,37 @@ app.post('/', async function (req, res) {
     }
     else {
       console.log("call ner api faild, status code not 200")
+    }
+    res.json(result)
+  } catch (e) {
+    console.log("Catch Exception")
+    console.log(e)
+    res.json({ error: e })
+  }
+})
+app.post('/annotate', async function (req, res) {
+  const payload = req.body
+  var result = {};
+  result.annotations = [];
+  try {
+    console.log("Received:")
+    var data = JSON.stringify({"type": payload["model_type"], "record_ids": payload["labelstudio_ids"]});
+    console.log(data)
+    const response = await axios({
+      method: 'post',
+      url: 'http://127.0.0.1:3001/api/v1/ner/labelstudio/annotate',
+      data: data,
+      headers: {
+        'Content-Type': `application/json; boundary=${data._boundary}`,
+      },
+    });
+    if (response.status == 200) {
+      console.log("call annotate api success")
+      result = JSON.stringify(response.data)
+    }
+    else {
+      console.log("call annotate api faild, status code not 200")
+      console.log(response.status)
     }
     res.json(result)
   } catch (e) {
