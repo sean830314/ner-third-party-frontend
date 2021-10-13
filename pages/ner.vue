@@ -18,6 +18,7 @@
         </el-form-item>
         <el-form-item label="model type" prop="model_type">
           <el-radio-group v-model="ruleForm.model_type">
+            <el-radio label="IDOX.AI"></el-radio>
             <el-radio label="Azure"></el-radio>
             <el-radio label="NLTK"></el-radio>
             <el-radio label="Spacy"></el-radio>
